@@ -25,6 +25,7 @@ class OpenAIClient:
         organization: str | None = None,
         project: str | None = None,
     ):
+        """Initialize the OpenAI client with an API key."""
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY is required to call OpenAI.")
@@ -88,6 +89,7 @@ def _build_input_content(
     *,
     role: str,
 ) -> list[dict[str, str]]:
+    """Build OpenAI message content from prompt text and images."""
     text_type = "output_text" if role == "assistant" else "input_text"
     parts = prompt_text.split("IMG_HOLDER")
     num_placeholders = len(parts) - 1
@@ -118,6 +120,7 @@ def _build_input_messages(
     image_paths: list[str],
     prompt_messages: list[PromptMessage] | None,
 ) -> list[dict[str, object]]:
+    """Build OpenAI input messages from prompt data."""
     if not prompt_messages:
         return [
             {
@@ -148,6 +151,7 @@ def _build_request_kwargs(
     prompt_text: str = "",
     prompt_messages: list[PromptMessage] | None = None,
 ) -> dict[str, object]:
+    """Build provider request parameters for one OpenAI call."""
     metadata = describe_effective_thinking_mode(model_name=model_name, thinking_mode=thinking_mode)
     kwargs: dict[str, object] = {}
     if metadata["thinking_mode"] not in {"default", "auto"}:
@@ -166,6 +170,7 @@ def _build_request_kwargs(
 
 
 def _empty_response_fallback(response) -> str:
+    """Return a fallback response when OpenAI returns no text."""
     response_id = getattr(response, "id", None)
     status = getattr(response, "status", None)
     details = []
@@ -182,6 +187,7 @@ def _empty_response_fallback(response) -> str:
 
 
 def _guess_mime_type(image_path: str) -> str:
+    """Guess an image MIME type from its file suffix."""
     suffix = Path(image_path).suffix.lower()
     if suffix == ".png":
         return "image/png"
@@ -191,6 +197,7 @@ def _guess_mime_type(image_path: str) -> str:
 
 
 def _extract_response_text(response) -> str | None:
+    """Extract text content from an OpenAI response."""
     direct_text = getattr(response, "output_text", None)
     if direct_text:
         return direct_text
@@ -210,6 +217,7 @@ def _extract_response_text(response) -> str | None:
 
 
 def _extract_token_usage(response) -> object:
+    """Extract normalized token usage from an OpenAI response."""
     usage = getattr(response, "usage", None)
     if usage is None:
         return build_token_usage()
@@ -230,6 +238,7 @@ def _build_prompt_cache_key(
     prompt_text: str,
     prompt_messages: list[PromptMessage] | None,
 ) -> str:
+    """Build a stable cache key for prompt and image inputs."""
     if prompt_messages:
         root_text = prompt_messages[0].text
         root_image_count = len(prompt_messages[0].image_paths)

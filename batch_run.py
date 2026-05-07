@@ -17,6 +17,7 @@ from pathlib import Path
 
 
 def _bootstrap_local_paths() -> None:
+    """Add the repository root to sys.path when the file is executed directly."""
     project_dir = Path(__file__).resolve().parent
     candidate = str(project_dir)
     if candidate not in sys.path:
@@ -126,6 +127,7 @@ class RunResult:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser for batch execution."""
     parser = argparse.ArgumentParser(description="Run multiple AtariBench jobs.")
     parser.add_argument(
         "--common-config",
@@ -166,6 +168,7 @@ def parse_job_spec(
     label: str | None = None,
     games_label: str | None = None,
 ) -> BatchJobSpec:
+    """Parse one ad hoc model/run job specification from the CLI."""
     parts = [part.strip() for part in raw_spec.split(":")]
     if len(parts) not in {2, 3}:
         raise ValueError(
@@ -209,6 +212,7 @@ def parse_job_spec(
 
 
 def load_yaml_config(path: str | Path) -> object:
+    """Load a YAML config file into a dictionary."""
     try:
         import yaml
     except ModuleNotFoundError as exc:  # pragma: no cover - depends on local env
@@ -235,6 +239,7 @@ def build_jobs_from_config(
     common_settings: dict[str, object] | None,
     setting_entries: list[dict[str, object]],
 ) -> tuple[dict[str, object], list[BatchJobSpec]]:
+    """Build batch job objects from run and common config files."""
     common = dict(common_settings or {})
     max_concurrency_by_company = _normalize_company_concurrency_map(
         _require_config_key(common, "max_concurrency_by_company", context="common")
@@ -332,6 +337,7 @@ def resolve_games_value(
     raw_games: object,
     config_game_selections: dict[str, list[str]] | None = None,
 ) -> list[str]:
+    """Resolve a game selector or explicit list into concrete game keys."""
     if isinstance(raw_games, str):
         raw_values = [raw_games]
     elif isinstance(raw_games, list):
@@ -348,6 +354,7 @@ def resolve_games_value(
 
 
 def _stringify_games_label(raw_games: object) -> str:
+    """Return a stable label for a game selector value."""
     if isinstance(raw_games, str):
         return raw_games
     if isinstance(raw_games, list):
@@ -356,12 +363,14 @@ def _stringify_games_label(raw_games: object) -> str:
 
 
 def _require_config_key(mapping: dict[str, object], key: str, *, context: str) -> object:
+    """Read a required config key and raise a clear error when it is missing."""
     if key not in mapping:
         raise ValueError(f"Missing required key '{key}' in {context}.")
     return mapping[key]
 
 
 def _normalize_config_game_selections(raw_value: object) -> dict[str, list[str]] | None:
+    """Normalize named game selections from common config."""
     if raw_value is None:
         return None
     if not isinstance(raw_value, dict):
@@ -383,6 +392,7 @@ def _normalize_config_game_selections(raw_value: object) -> dict[str, list[str]]
 
 
 def _coerce_config_bool(value: object, *, key: str, context: str) -> bool:
+    """Coerce a config value into a boolean."""
     if isinstance(value, bool):
         return value
     if isinstance(value, int) and value in {0, 1}:
@@ -401,6 +411,7 @@ def _resolve_games_token(
     config_game_selections: dict[str, list[str]] | None,
     _seen: set[str] | None = None,
 ) -> list[str]:
+    """Resolve one named game token from common config."""
     normalized_token = token.strip().lower()
     if normalized_token == "all":
         return list_game_keys()
@@ -424,6 +435,7 @@ def _resolve_games_token(
 
 
 def _normalize_company_concurrency_map(raw_value: object) -> dict[str, int] | None:
+    """Normalize provider-level concurrency caps from config."""
     if raw_value is None:
         return None
     if not isinstance(raw_value, dict):
@@ -453,6 +465,7 @@ def expand_run_requests(
     log_dir: str | Path,
     batch_timestamp: str | None = None,
 ) -> list[RunRequest]:
+    """Expand batch jobs into concrete per-game run requests."""
     requests: list[RunRequest] = []
     project_dir = Path(project_dir)
     base_output_dir = Path(base_output_dir)
@@ -507,6 +520,7 @@ def expand_run_requests(
 
 
 def _extract_cfg_run_label(job_label: str) -> str | None:
+    """Extract the cfg_xxx_run_xxx suffix from a run label."""
     match = re.search(r"(cfg_\d+)$", job_label)
     if match:
         return match.group(1)
@@ -519,6 +533,7 @@ def _build_run_label(
     job_label: str,
     run_index: int,
 ) -> str | None:
+    """Build the stable label used for one config-driven run."""
     cfg_label = _extract_cfg_run_label(job_label)
     if not cfg_label and batch_timestamp is None:
         return None
@@ -533,6 +548,7 @@ def _build_run_label(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the batch CLI entrypoint."""
     parser = build_parser()
     args = parser.parse_args(argv)
     project_dir = Path(__file__).resolve().parent
@@ -638,6 +654,7 @@ def execute_run(
     retry_backoff_seconds: float,
     render_video_fps: int,
 ) -> RunResult:
+    """Execute one run request with retries and summary handling."""
     print(_format_run_start_line(request), flush=True)
     current_thinking = request.thinking_mode
     attempts = 0
@@ -742,6 +759,7 @@ def execute_requests(
     max_concurrency_by_company: dict[str, int] | None,
     default_max_concurrency: int,
 ) -> list[RunResult]:
+    """Schedule and execute all run requests with provider concurrency limits."""
     max_workers = _resolve_executor_worker_count(
         max_concurrency=default_max_concurrency,
         max_concurrency_by_company=max_concurrency_by_company,
@@ -812,6 +830,7 @@ def _resolve_company_limits(
     max_concurrency_by_company: dict[str, int] | None,
     default_limit: int,
 ) -> dict[str, int]:
+    """Return concurrency limits for the companies used by the requests."""
     if not max_concurrency_by_company:
         return {company: default_limit for company in _SUPPORTED_COMPANIES}
     return {
@@ -826,6 +845,7 @@ def _find_next_schedulable_request_index(
     active_counts: dict[str, int],
     company_limits: dict[str, int],
 ) -> int | None:
+    """Find the next queued request whose provider has capacity."""
     for index, request in enumerate(pending_requests):
         if active_counts[request.company] < company_limits[request.company]:
             return index
@@ -837,6 +857,7 @@ def _resolve_executor_worker_count(
     max_concurrency: int,
     max_concurrency_by_company: dict[str, int] | None,
 ) -> int:
+    """Return the thread-pool size needed for the scheduled requests."""
     if not max_concurrency_by_company:
         return max_concurrency
     return sum(max_concurrency_by_company.get(company, max_concurrency) for company in _SUPPORTED_COMPANIES)
@@ -846,6 +867,7 @@ def _run_subprocess(
     request: RunRequest,
     thinking_mode: str,
 ) -> subprocess.CompletedProcess[str]:
+    """Run one main.py subprocess and capture its output."""
     script_path = Path(__file__).resolve().with_name("main.py")
     env = os.environ.copy()
     env[_INTERNAL_REQUEST_ENV] = json.dumps(
@@ -884,6 +906,7 @@ def _run_subprocess(
 
 
 def classify_error_output(output: str) -> str | None:
+    """Classify subprocess output into a retry or terminal error category."""
     normalized = output.lower()
     if "resource_exhausted" in normalized or "429" in normalized:
         return "transient"
@@ -927,6 +950,7 @@ def compute_retry_sleep_seconds(
 
 
 def extract_run_dir(output: str) -> str | None:
+    """Extract the run directory path from subprocess stdout."""
     for line in reversed(output.splitlines()):
         stripped = line.strip()
         if stripped.startswith("runs/") and Path(stripped).name:
@@ -937,6 +961,7 @@ def extract_run_dir(output: str) -> str | None:
 
 
 def normalize_run_dir(run_dir: str | None) -> str | None:
+    """Normalize a run directory string into a Path."""
     if not run_dir:
         return None
     path = Path(run_dir)
@@ -946,6 +971,7 @@ def normalize_run_dir(run_dir: str | None) -> str | None:
 
 
 def load_run_summary(run_dir: str | None) -> dict[str, object] | None:
+    """Load summary.json for a completed run."""
     if not run_dir:
         return None
     summary_path = Path(run_dir) / "summary.json"
@@ -960,6 +986,7 @@ def _attach_video_metadata(
     video_error: str | None,
     run_dir: str | None,
 ) -> dict[str, object] | None:
+    """Record rendered video metadata in the run summary."""
     if not summary or not run_dir:
         return summary
     summary["video_path"] = video_path
@@ -977,6 +1004,7 @@ def _extract_stop_reason(
     summary: dict[str, object] | None,
     output: str,
 ) -> str | None:
+    """Read the stop reason from a run summary."""
     if summary and "stop_reason" in summary:
         stop_reason = summary["stop_reason"]
         return str(stop_reason) if stop_reason is not None else None
@@ -990,6 +1018,7 @@ def _is_full_duration_run(
     summary: dict[str, object] | None,
     expected_duration_seconds: int,
 ) -> bool:
+    """Return whether a run reached the configured frame budget."""
     if not summary:
         return False
     stop_reason = summary.get("stop_reason")
@@ -1002,12 +1031,14 @@ def _is_full_duration_run(
 
 
 def _write_log(path: str | Path, header: str, content: str) -> None:
+    """Append text to a log file, creating parent directories as needed."""
     log_path = Path(path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_path.write_text(header + content, encoding="utf-8")
 
 
 def _format_run_start_line(request: RunRequest) -> str:
+    """Format the flat startup log line for one run request."""
     seed_value = "null" if request.seed is None else str(request.seed)
     return (
         "[START] "
@@ -1029,10 +1060,12 @@ def _format_run_start_line(request: RunRequest) -> str:
 
 
 def _sort_key(result: RunResult) -> tuple[str, int]:
+    """Return a deterministic sort key for run requests."""
     return (result.game, result.job_label, result.run_index)
 
 
 def _subprocess_cwd() -> Path:
+    """Return the working directory for spawned main.py subprocesses."""
     return Path(__file__).resolve().parent
 
 

@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 def _bootstrap_local_paths() -> None:
+    """Add the repository root to sys.path when the file is executed directly."""
     project_dir = Path(__file__).resolve().parent
     candidate = str(project_dir)
     if candidate not in sys.path:
@@ -37,6 +38,7 @@ _INTERNAL_REQUEST_ENV = "ATARIBENCH_INTERNAL_RUN_REQUEST"
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser for a single run."""
     parser = argparse.ArgumentParser(description="Run an AtariBench model pipeline.")
     parser.add_argument("--game", required=True, choices=list_game_keys())
     parser.add_argument("--model", default="gemini-2.5-flash")
@@ -73,6 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _args_from_internal_request(project_dir: Path, raw_payload: str) -> argparse.Namespace:
+    """Convert a batch-run request object into main CLI arguments."""
     payload = json.loads(raw_payload)
     if not isinstance(payload, dict):
         raise ValueError(f"{_INTERNAL_REQUEST_ENV} must contain a JSON object.")
@@ -96,6 +99,7 @@ def _args_from_internal_request(project_dir: Path, raw_payload: str) -> argparse
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the single-game AtariBench CLI entrypoint."""
     project_dir = Path(__file__).resolve().parent
     raw_internal_request = os.environ.get(_INTERNAL_REQUEST_ENV)
     if raw_internal_request:
@@ -181,6 +185,7 @@ def _attach_video_metadata(
     video_path: str | None,
     video_error: str | None,
 ) -> dict[str, object]:
+    """Record rendered video metadata in the run summary."""
     summary["video_path"] = video_path
     summary["video_error"] = video_error
     summary_path = Path(str(summary["run_dir"])) / "summary.json"

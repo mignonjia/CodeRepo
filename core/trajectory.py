@@ -88,6 +88,7 @@ class Trajectory:
         include_game_key: bool = True,
         run_label: str | None = None,
     ):
+        """Create output directories and initialize trajectory bookkeeping."""
         base_dir = Path(base_output_dir)
         run_dir_stem = run_label or dt.datetime.now().strftime("%m%d_%H%M%S")
         if include_game_key:
@@ -137,6 +138,7 @@ class Trajectory:
         return record
 
     def latest_frame(self) -> FrameRecord:
+        """Return the most recently recorded frame metadata."""
         if not self.frame_records:
             raise RuntimeError("No frames recorded yet.")
         return self.frame_records[-1]
@@ -296,6 +298,7 @@ class Trajectory:
 
 
 def _turn_to_dict(turn: TurnRecord) -> dict[str, Any]:
+    """Convert a stored turn record into JSON-serializable data."""
     payload = dataclasses.asdict(turn)
     return payload
 
@@ -317,6 +320,7 @@ def apply_minimal_logging_policy(run_dir: str | Path) -> None:
 
 
 def _default_frame_writer(frame: Any, path: Path) -> None:
+    """Write one RGB frame image to disk."""
     try:
         from PIL import Image
     except ImportError as exc:
@@ -327,6 +331,7 @@ def _default_frame_writer(frame: Any, path: Path) -> None:
 
 
 def _allocate_run_dir(run_root: Path, run_dir_stem: str) -> Path:
+    """Create a unique run directory under the requested root."""
     run_root.mkdir(parents=True, exist_ok=True)
     attempt = 0
     while True:
@@ -344,6 +349,7 @@ def _render_prompt_html(
     referenced_image_paths: list[str],
     html_path: Path,
 ) -> str:
+    """Render one prompt artifact as simple HTML."""
     if _looks_like_chat_transcript(prompt_text):
         return _render_chat_prompt_html(
             prompt_text=prompt_text,
@@ -465,6 +471,7 @@ def _render_prompt_html(
 
 
 def _looks_like_chat_transcript(prompt_text: str) -> bool:
+    """Return whether prompt text appears to be a chat transcript."""
     return "<user>" in prompt_text or "<assistant>" in prompt_text
 
 
@@ -473,6 +480,7 @@ def _render_chat_prompt_html(
     referenced_image_paths: list[str],
     html_path: Path,
 ) -> str:
+    """Render chat transcript prompt text as structured HTML."""
     image_index = 0
     bubbles: list[str] = []
 
@@ -601,6 +609,7 @@ def _render_chat_prompt_html(
 
 
 def _iter_chat_blocks(prompt_text: str) -> list[tuple[str, str]]:
+    """Yield role/content blocks parsed from a chat transcript."""
     pattern = re.compile(r"<(user|assistant)>\s*(.*?)\s*</\1>", re.DOTALL)
     return [(match.group(1), match.group(2)) for match in pattern.finditer(prompt_text)]
 
@@ -612,6 +621,7 @@ def _render_chat_bubble_html(
     html_path: Path,
     image_index: int,
 ) -> tuple[str, int]:
+    """Render one chat block as an HTML bubble."""
     placeholder = "IMG_HOLDER"
     parts = body.split(placeholder)
     rendered: list[str] = []

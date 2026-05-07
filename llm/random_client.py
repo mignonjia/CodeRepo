@@ -39,6 +39,7 @@ class RandomClient:
         context_cache: bool = False,
         html_log_path=None,
     ) -> LlmTurnResponse:
+        """Generate a random valid-looking action response for local testing."""
         actions = _parse_actions_from_prompt(prompt_text)
         n = random.randint(1, min(3, len(actions)))
         chosen = random.choices(actions, k=n)

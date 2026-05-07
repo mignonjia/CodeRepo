@@ -82,6 +82,7 @@ def render_run_video(
 
 
 def _load_turns(turns_path: Path) -> list[TurnWindow]:
+    """Load turn records from a run directory."""
     turns: list[TurnWindow] = []
     for line in turns_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -119,6 +120,7 @@ def _compose_frame(
     panel_width: int,
     fps: int,
 ) -> Image.Image:
+    """Compose one annotated visualization frame."""
     canvas = Image.new("RGB", (canvas_width, canvas_height), "white")
     draw = ImageDraw.Draw(canvas)
     title_font = _load_font(17)
@@ -231,6 +233,7 @@ def _draw_wrapped_block(
     fill,
     max_lines: int | None = None,
 ) -> int:
+    """Draw wrapped text inside a rectangular text area."""
     lines = []
     for paragraph in text.splitlines():
         clean = paragraph.strip()
@@ -257,17 +260,20 @@ def _draw_wrapped_block(
 
 
 def _line_height(font: ImageFont.ImageFont) -> int:
+    """Return the pixel line height for a font."""
     bbox = font.getbbox("Ag")
     return bbox[3] - bbox[1]
 
 
 def _truncate_line(text: str, max_chars: int = 72) -> str:
+    """Trim text so it fits within a maximum width."""
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3].rstrip() + "..."
 
 
 def _find_turn_for_frame(turns: list[TurnWindow], frame_index: int) -> TurnWindow | None:
+    """Find the turn active at a specific frame number."""
     for turn in turns:
         if turn.start_frame_index <= frame_index <= turn.executed_frame_end:
             return turn
@@ -279,6 +285,7 @@ def _find_turn_for_frame(turns: list[TurnWindow], frame_index: int) -> TurnWindo
 
 
 def _find_active_action_index(turn: TurnWindow, frame_index: int) -> int | None:
+    """Find the action index active at a specific frame number."""
     if not turn.action_windows:
         return None
     for index, action in enumerate(turn.action_windows):
@@ -290,6 +297,7 @@ def _find_active_action_index(turn: TurnWindow, frame_index: int) -> int | None:
 
 
 def _load_font(size: int) -> ImageFont.ImageFont:
+    """Load a preferred font or fall back to Pillow defaults."""
     for font_name in ("Menlo.ttc", "Arial.ttf", "DejaVuSans.ttf"):
         try:
             return ImageFont.truetype(font_name, size=size)
@@ -299,6 +307,7 @@ def _load_font(size: int) -> ImageFont.ImageFont:
 
 
 def _encode_video(rendered_frames_dir: Path, output_path: Path, fps: int) -> None:
+    """Encode rendered frames into an MP4 video."""
     command = [
         "ffmpeg",
         "-y",
@@ -314,6 +323,7 @@ def _encode_video(rendered_frames_dir: Path, output_path: Path, fps: int) -> Non
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser for video rendering."""
     parser = argparse.ArgumentParser(description="Render a run directory into a video.")
     parser.add_argument("--run-dir", required=True)
     parser.add_argument("--output-path", default=None)
@@ -322,6 +332,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the visualization CLI entrypoint."""
     args = build_parser().parse_args(argv)
     output_path = render_run_video(
         run_dir=args.run_dir,

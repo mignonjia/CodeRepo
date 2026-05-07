@@ -185,6 +185,7 @@ def serialize_prompt_messages(messages: list[PromptMessage]) -> tuple[str, list[
 
 
 def _belongs_in_reward_history(turn: TurnRecord) -> bool:
+    """Return whether a turn should be included as reward history."""
     if turn.reward_delta != 0.0:
         return True
     return any(action.lost_life for action in turn.action_records)
@@ -215,6 +216,7 @@ def build_clip_prompt(turn: TurnRecord, game_spec: GameSpec) -> tuple[str, list[
 
 
 def _build_state_reward_prompt(action: ActionRecord, game_spec: GameSpec) -> str:
+    """Build the text summary for one historical state and reward."""
     state_text = common_prompt.STATE_REWARD_TEMPLATE.format(
         TIME=format_time(action.end_frame_index, game_spec.fps)
     )

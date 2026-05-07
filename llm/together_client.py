@@ -19,6 +19,7 @@ class TogetherClient:
     """Thin wrapper around the official Together SDK."""
 
     def __init__(self, api_key: str | None = None):
+        """Initialize the Together client with an API key."""
         self.api_key = api_key or os.getenv("TOGETHER_API_KEY")
         if not self.api_key:
             raise RuntimeError("TOGETHER_API_KEY is required to call Together.")
@@ -44,6 +45,7 @@ class TogetherClient:
         client = Together(api_key=self.api_key)
 
         def _call():
+            """Call Together chat completions with retry handling."""
             stream = client.chat.completions.create(
                 model=model_name,
                 messages=_build_input_messages(
@@ -76,6 +78,7 @@ def _build_input_messages(
     image_paths: list[str],
     prompt_messages: list[PromptMessage] | None,
 ) -> list[dict[str, object]]:
+    """Build Together input messages from prompt data."""
     if not prompt_messages:
         return [{"role": "user", "content": _build_message_content(prompt_text, image_paths)}]
     payload: list[dict[str, object]] = []
@@ -90,6 +93,7 @@ def _build_input_messages(
 
 
 def _build_message_content(prompt_text: str, image_paths: list[str]) -> str | list[dict[str, object]]:
+    """Build one Together multimodal message content list."""
     segments = prompt_text.split("IMG_HOLDER")
     num_placeholders = len(segments) - 1
     if num_placeholders != len(image_paths):
@@ -119,6 +123,7 @@ def _build_message_content(prompt_text: str, image_paths: list[str]) -> str | li
 
 
 def _build_request_kwargs(*, thinking_mode: str) -> dict[str, object]:
+    """Build provider request parameters for one Together call."""
     normalized_mode = thinking_mode.strip().lower()
     if normalized_mode in {"default", "auto"}:
         return {}
@@ -132,6 +137,7 @@ def _build_request_kwargs(*, thinking_mode: str) -> dict[str, object]:
 
 
 def _guess_mime_type(image_path: str) -> str:
+    """Guess an image MIME type from its file suffix."""
     suffix = Path(image_path).suffix.lower()
     if suffix == ".png":
         return "image/png"

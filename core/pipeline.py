@@ -55,6 +55,7 @@ class PipelineRunner:
         env_factory: EnvFactory | None = None,
         frame_writer=None,
     ):
+        """Initialize the runner with a game spec, model client, and runtime config."""
         self.game_spec = game_spec
         self.model_client = model_client
         self.config = config
@@ -65,10 +66,12 @@ class PipelineRunner:
 
     @property
     def frame_budget(self) -> int:
+        """Return the total frame budget implied by the runtime config."""
         return self.config.duration_seconds * self.game_spec.fps
 
     @property
     def effective_history_clips(self) -> int:
+        """Return the number of recent history clips to include."""
         if self.config.prompt_mode == "append_only":
             return -1
         assert self.config.history_clips is not None
@@ -76,6 +79,7 @@ class PipelineRunner:
 
     @property
     def effective_non_zero_reward_clips(self) -> int:
+        """Return the number of reward-bearing clips to include."""
         if self.config.prompt_mode == "append_only":
             return -1
         assert self.config.non_zero_reward_clips is not None
@@ -83,6 +87,7 @@ class PipelineRunner:
 
     @property
     def effective_context_cache(self) -> bool:
+        """Return whether context-cache hints should be sent this run."""
         return bool(self.config.context_cache and self.config.prompt_mode == "append_only")
 
     def run(self) -> dict[str, Any]:
@@ -319,6 +324,7 @@ class PipelineRunner:
         trajectory: Trajectory,
         local_frame_index: int,
     ):
+        """Reset the environment and persist the initial frame."""
         observation, info = self._reset_env(env)
         observation, info = self._apply_skip_seconds(env, observation, info)
         frame = capture_frame(env, observation)
@@ -331,6 +337,7 @@ class PipelineRunner:
         return frame_record.local_frame_index, extract_env_info(info)
 
     def _reset_env(self, env: Any):
+        """Reset the ALE environment with optional seed handling."""
         try:
             return env.reset(seed=self.config.seed)
         except TypeError:
@@ -339,6 +346,7 @@ class PipelineRunner:
             return env.reset(seed=self.config.seed)
 
     def _apply_skip_seconds(self, env: Any, observation: Any, info: dict[str, Any]):
+        """Advance the environment through the configured initial skip window."""
         skip_frames = max(int(round(self.game_spec.skip_seconds * self.game_spec.fps)), 0)
         if skip_frames <= 0:
             return observation, info
@@ -358,6 +366,7 @@ class PipelineRunner:
         return current_observation, current_info
 
     def _parse_response(self, raw_response: str) -> ParsedClipResponse:
+        """Parse and validate one model response into executable actions."""
         return parse_model_response(
             raw_text=raw_response,
             game_spec=self.game_spec,
@@ -365,6 +374,7 @@ class PipelineRunner:
         )
 
     def _parse_response_or_fallback(self, raw_response: str) -> ParsedClipResponse:
+        """Parse a response or fall back to noop on invalid output."""
         parsed_response = self._parse_response(raw_response)
         if not parsed_response.errors:
             return parsed_response
@@ -383,6 +393,7 @@ class PipelineRunner:
         )
 
     def _coerce_turn_response(self, response: str | LlmTurnResponse) -> LlmTurnResponse:
+        """Normalize provider responses into an LlmTurnResponse object."""
         if isinstance(response, LlmTurnResponse):
             return response
         return LlmTurnResponse(text=str(response))

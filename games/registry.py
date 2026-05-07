@@ -23,6 +23,7 @@ class GameSpec:
 
 
 def _load_prompt_module(module_name: str):
+    """Import the prompt module for one game key."""
     if module_name.startswith("."):
         return importlib.import_module(module_name, package=__package__)
     if module_name.startswith("prompt."):
@@ -40,6 +41,7 @@ def _build_game_spec(
     fps: int = 30,
     frames_per_action: int = 3,
 ) -> GameSpec:
+    """Build a GameSpec from a prompt module."""
     prompt_module = _load_prompt_module(prompt_module_name)
     raw_action_map = getattr(prompt_module, "ACTION_MAP")
     normalized_action_map = {
@@ -66,6 +68,7 @@ _ENV_NAME_OVERRIDES = {
 
 
 def _game_key_to_env_id(game_key: str) -> str:
+    """Convert an AtariBench game key into an ALE environment id."""
     env_name = _ENV_NAME_OVERRIDES.get(
         game_key,
         "".join(part.title() for part in game_key.split("_")),
@@ -74,6 +77,7 @@ def _game_key_to_env_id(game_key: str) -> str:
 
 
 def _discover_game_specs() -> dict[str, GameSpec]:
+    """Discover all prompt-backed game specifications."""
     prompts_dir = Path(__file__).resolve().parent / "prompts"
     specs: dict[str, GameSpec] = {}
     for path in sorted(prompts_dir.glob("*.py")):

@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 def _bootstrap_local_paths() -> None:
+    """Add the repository root to sys.path when the file is executed directly."""
     project_dir = Path(__file__).resolve().parent
     candidate = str(project_dir)
     if candidate not in sys.path:

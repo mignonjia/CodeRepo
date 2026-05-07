@@ -27,6 +27,7 @@ class TokenUsage:
     cached_input_tokens: int | None = None
 
     def to_dict(self) -> dict[str, int | None]:
+        """Convert token usage fields into a JSON-serializable dictionary."""
         return {
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
@@ -37,6 +38,7 @@ class TokenUsage:
 
     @property
     def reported(self) -> bool:
+        """Return whether any token usage value was reported."""
         return any(
             value is not None
             for value in (
@@ -279,6 +281,7 @@ def validate_model_thinking_mode(model_name: str, thinking_mode: str) -> None:
 
 
 def _normalize_model_thinking_key(model_name: str) -> str:
+    """Normalize a model name for thinking-mode lookup."""
     normalized_name = model_name.strip().lower()
     if normalized_name.startswith("models/"):
         return normalized_name.split("/", 1)[1]
@@ -286,6 +289,7 @@ def _normalize_model_thinking_key(model_name: str) -> str:
 
 
 def _coerce_optional_int(value: object) -> int | None:
+    """Convert a provider value to an optional integer."""
     if value is None:
         return None
     return int(value)

@@ -22,6 +22,7 @@ class GeminiClient:
     """Thin wrapper around the official Gemini SDK."""
 
     def __init__(self, api_key: str | None = None):
+        """Initialize the Gemini client with an API key."""
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is required to call Gemini.")
@@ -76,6 +77,7 @@ def _generate_turn_response(
     prompt_messages: list[PromptMessage] | None,
     html_log_path: Path | None = None,
 ) -> LlmTurnResponse:
+    """Send one Gemini request and normalize the response."""
     contents = _build_contents(
         types=types,
         prompt_text=prompt_text,
@@ -97,6 +99,7 @@ def _generate_turn_response(
 
 
 def _empty_response_error_message(response) -> str:
+    """Build a readable error message for an empty Gemini response."""
     finish_reasons = []
     candidates = getattr(response, "candidates", None) or []
     for candidate in candidates:
@@ -115,6 +118,7 @@ def _empty_response_error_message(response) -> str:
 
 
 def _build_contents(types, prompt_text: str, image_paths: list[str], prompt_messages: list[PromptMessage] | None):
+    """Build Gemini request contents from prompt text or chat messages."""
     if not prompt_messages:
         return [types.Content(role="user", parts=_build_parts(types, prompt_text, image_paths))]
     contents = []
@@ -130,6 +134,7 @@ def _build_contents(types, prompt_text: str, image_paths: list[str], prompt_mess
 
 
 def _build_parts(types, prompt_text: str, image_paths: list[str]):
+    """Build Gemini multimodal parts from text and images."""
     segments = prompt_text.split("IMG_HOLDER")
     num_placeholders = len(segments) - 1
     if num_placeholders != len(image_paths):
@@ -149,6 +154,7 @@ def _build_parts(types, prompt_text: str, image_paths: list[str]):
 
 
 def _build_generate_config(types, model_name: str, thinking_mode: str):
+    """Build Gemini generation configuration for the requested mode."""
     metadata = describe_effective_thinking_mode(model_name=model_name, thinking_mode=thinking_mode)
     if metadata["thinking_mode"] in {"default", "auto", "none"}:
         return None
@@ -191,11 +197,13 @@ def _build_generate_config(types, model_name: str, thinking_mode: str):
 
 
 def _build_http_options(types):
+    """Build Gemini HTTP options including timeout configuration."""
     timeout_ms = _resolve_timeout_ms()
     return types.HttpOptions(timeout=timeout_ms)
 
 
 def _resolve_timeout_ms() -> int:
+    """Resolve the Gemini request timeout in milliseconds."""
     raw_value = os.getenv("ATARIBENCH_GEMINI_TIMEOUT_MS", str(DEFAULT_GEMINI_TIMEOUT_MS))
     try:
         timeout_ms = int(raw_value)
@@ -205,6 +213,7 @@ def _resolve_timeout_ms() -> int:
 
 
 def _guess_mime_type(image_path: str) -> str:
+    """Guess an image MIME type from its file suffix."""
     suffix = Path(image_path).suffix.lower()
     if suffix == ".png":
         return "image/png"
@@ -299,6 +308,7 @@ def _write_query_html_log(html_log_path: Path, contents) -> None:
 
 
 def _extract_response_text(response) -> str | None:
+    """Extract text content from a Gemini response."""
     direct_text = getattr(response, "text", None)
     if direct_text:
         return direct_text
@@ -315,6 +325,7 @@ def _extract_response_text(response) -> str | None:
 
 
 def _extract_token_usage(response) -> object:
+    """Extract normalized token usage from a Gemini response."""
     usage_metadata = getattr(response, "usage_metadata", None)
     if usage_metadata is None:
         return build_token_usage()

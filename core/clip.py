@@ -26,6 +26,7 @@ class ParsedClipResponse:
 
     @property
     def is_valid(self) -> bool:
+        """Return whether parsing produced no validation errors."""
         return not self.errors
 
 
@@ -82,6 +83,7 @@ def normalize_action_name(action: str) -> str:
 
 
 def _strip_code_fences(text: str) -> str:
+    """Remove surrounding Markdown code fences from a model response."""
     stripped = text.strip()
     if stripped.startswith("```"):
         stripped = _CODE_FENCE_RE.sub("", stripped).strip()

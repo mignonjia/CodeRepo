@@ -21,6 +21,7 @@ class DashScopeClient:
     """Thin wrapper around DashScope's OpenAI-compatible chat completions API."""
 
     def __init__(self, api_key: str | None = None):
+        """Initialize the DashScope client with an API key."""
         self.api_key = api_key or os.getenv("DASHSCOPE_API_KEY")
         if not self.api_key:
             raise RuntimeError("DASHSCOPE_API_KEY is required to call DashScope.")
@@ -66,6 +67,7 @@ class DashScopeClient:
 
 
 def _build_request_kwargs(*, thinking_mode: str) -> dict[str, object]:
+    """Build provider request parameters for one DashScope call."""
     normalized_mode = thinking_mode.strip().lower()
     if normalized_mode in {"off", "none"}:
         return {"extra_body": {"enable_thinking": False}}
@@ -78,6 +80,7 @@ def _build_input_messages(
     image_paths: list[str],
     prompt_messages: list[PromptMessage] | None,
 ) -> list[dict[str, object]]:
+    """Build DashScope input messages from prompt data."""
     if not prompt_messages:
         return [{"role": "user", "content": _build_message_content(prompt_text, image_paths)}]
     payload: list[dict[str, object]] = []
@@ -92,6 +95,7 @@ def _build_input_messages(
 
 
 def _build_message_content(prompt_text: str, image_paths: list[str]) -> str | list[dict[str, object]]:
+    """Build one DashScope multimodal message content list."""
     segments = prompt_text.split("IMG_HOLDER")
     num_placeholders = len(segments) - 1
     if num_placeholders != len(image_paths):
@@ -121,6 +125,7 @@ def _build_message_content(prompt_text: str, image_paths: list[str]) -> str | li
 
 
 def _guess_mime_type(image_path: str) -> str:
+    """Guess an image MIME type from its file suffix."""
     suffix = Path(image_path).suffix.lower()
     if suffix == ".png":
         return "image/png"
@@ -130,6 +135,7 @@ def _guess_mime_type(image_path: str) -> str:
 
 
 def _extract_response_text(response) -> str | None:
+    """Extract text content from a DashScope response."""
     choices = getattr(response, "choices", None) or []
     if not choices:
         return None
@@ -143,6 +149,7 @@ def _extract_response_text(response) -> str | None:
 
 
 def _extract_token_usage(response) -> object:
+    """Extract normalized token usage from a DashScope response."""
     usage = getattr(response, "usage", None)
     if usage is None:
         return build_token_usage()

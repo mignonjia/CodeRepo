@@ -27,6 +27,7 @@ def extract_env_info(info: dict[str, Any] | None) -> EnvInfo:
 
 
 def _as_int(value: Any) -> int | None:
+    """Convert a value to int when possible."""
     if value is None:
         return None
     try:

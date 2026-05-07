@@ -27,6 +27,7 @@ NO_THINKING_LEVELS = frozenset({"none"})
 
 
 def _discover_canonical_game_keys() -> frozenset[str]:
+    """Discover canonical game keys from the game registry."""
     prompts_dir = Path(__file__).resolve().parent / "games" / "prompts"
     return frozenset(
         path.stem
@@ -182,6 +183,7 @@ def _build_game_summary_payload(
     include_run,
     run_filter: str,
 ) -> dict[str, object]:
+    """Build one per-game summary payload from stored runs."""
     models: dict[str, list[dict[str, object]]] = {}
 
     for model_dir in sorted(root.iterdir()):
@@ -244,6 +246,7 @@ def _build_runs_summary_payload(
     run_filter: str,
     include_entry=None,
 ) -> dict[str, object]:
+    """Build the top-level cross-game summary payload."""
     entries: list[dict[str, object]] = []
 
     for game_dir in sorted(root.iterdir()):
@@ -295,10 +298,12 @@ def _build_runs_summary_payload(
 
 
 def _is_successful_run(summary: dict[str, object]) -> bool:
+    """Return whether a summary represents a successful completed run."""
     return _coerce_string(summary.get("stop_reason"), default="") == "frame_budget"
 
 
 def _is_full_canonical_run(summary: dict[str, object]) -> bool:
+    """Return whether a run is a full benchmark-length canonical run."""
     duration_seconds = summary.get("duration_seconds")
     stop_reason = _coerce_string(summary.get("stop_reason"), default="")
     frame_count = _coerce_float(summary.get("frame_count"))
@@ -309,6 +314,7 @@ def _is_full_canonical_run(summary: dict[str, object]) -> bool:
 
 
 def _is_full_run_model_summary_entry(entry: dict[str, object]) -> bool:
+    """Return whether a top-level entry belongs in the full-run summary."""
     model_name = _coerce_string(entry.get("model_name"), default="")
     if model_name not in FULL_RUN_MODEL_SUMMARY_ALLOWED_MODELS:
         return False
@@ -324,12 +330,14 @@ def _is_full_run_model_summary_entry(entry: dict[str, object]) -> bool:
 
 
 def _coerce_float(value: object, default: float = 0.0) -> float:
+    """Convert a value to float when possible."""
     if value is None:
         return default
     return float(value)
 
 
 def _coerce_string(value: object, default: str) -> str:
+    """Convert a value to string when present."""
     if value is None:
         return default
     return str(value)
@@ -340,6 +348,7 @@ def _build_setting_summary(
     setting_key: str,
     eligible_runs: list[tuple[Path, dict[str, object]]],
 ) -> dict[str, object]:
+    """Aggregate run summaries for one model/prompt setting."""
     latest_run_dir, latest_summary = max(eligible_runs, key=lambda item: item[0].name)
 
     total_rewards = [_coerce_float(summary.get("total_reward")) for _, summary in eligible_runs]
@@ -411,6 +420,7 @@ def _build_setting_summary(
 
 
 def _build_setting_key(summary: dict[str, object]) -> str:
+    """Build the grouping key used for model-summary aggregation."""
     return "|".join(
         (
             f"prompt_mode={_coerce_string(summary.get('prompt_mode'), default='structured_history')}",
@@ -426,12 +436,14 @@ def _build_setting_key(summary: dict[str, object]) -> str:
 
 
 def _stringify_setting_value(value: object) -> str:
+    """Convert setting values into stable key components."""
     if value is None:
         return "null"
     return str(value)
 
 
 def _extract_history_clips(summary: dict[str, object]) -> int:
+    """Extract the effective history-clip count from a summary."""
     if _coerce_string(summary.get("prompt_mode"), default="structured_history") == "append_only":
         return -1
     value = summary.get("history_clips")
@@ -441,6 +453,7 @@ def _extract_history_clips(summary: dict[str, object]) -> int:
 
 
 def _extract_non_zero_reward_clips(summary: dict[str, object]) -> int:
+    """Extract the effective reward-history clip count from a summary."""
     if _coerce_string(summary.get("prompt_mode"), default="structured_history") == "append_only":
         return -1
     value = summary.get("non_zero_reward_clips")
@@ -453,6 +466,7 @@ def _extract_non_zero_reward_clips(summary: dict[str, object]) -> int:
 
 
 def _extract_frames_per_action(summary: dict[str, object]) -> int:
+    """Extract frames-per-action from a summary."""
     value = summary.get("frames_per_action")
     if value is None:
         return 3
@@ -460,6 +474,7 @@ def _extract_frames_per_action(summary: dict[str, object]) -> int:
 
 
 def _standard_error(values: list[float]) -> float:
+    """Compute the standard error for numeric values."""
     count = len(values)
     if count <= 1:
         return 0.0

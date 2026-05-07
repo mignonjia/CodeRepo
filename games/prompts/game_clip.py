@@ -26,6 +26,7 @@ class Step:
   img: PIL.Image.Image = dataclasses.field(init=False)
 
   def __post_init__(self):
+    """Validate clip metadata after dataclass construction."""
     self.img = logging_utils.obs_to_img(self.obs)
 
 
@@ -51,6 +52,7 @@ class GameClip:
       response_obj: parse_response.LLMResponseList,
       use_full_traj: bool = False,
   ):
+    """Create a game clip with normalized metadata."""
     self.start_obs = start_obs
     self.start_img = logging_utils.obs_to_img(start_obs)
     self.start_frame_idx = start_frame_idx

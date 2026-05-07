@@ -28,6 +28,7 @@ class AnthropicClient:
     """Thin wrapper around the official Anthropic SDK."""
 
     def __init__(self, api_key: str | None = None):
+        """Initialize the Anthropic client with an API key."""
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY is required to call Anthropic.")
@@ -77,6 +78,7 @@ class AnthropicClient:
 
 
 def _build_input_content(prompt_text: str, image_paths: list[str]) -> list[dict[str, object]]:
+    """Build Anthropic message content from prompt text and images."""
     segments = prompt_text.split("IMG_HOLDER")
     num_placeholders = len(segments) - 1
     if num_placeholders != len(image_paths):
@@ -110,6 +112,7 @@ def _build_input_messages(
     image_paths: list[str],
     prompt_messages: list[PromptMessage] | None,
 ) -> list[dict[str, object]]:
+    """Build Anthropic input messages from prompt data."""
     if not prompt_messages:
         return [{"role": "user", "content": _build_input_content(prompt_text, image_paths)}]
     payload: list[dict[str, object]] = []
@@ -129,6 +132,7 @@ def _build_request_kwargs(
     *,
     context_cache: bool = False,
 ) -> dict[str, object]:
+    """Build provider request parameters for one Anthropic call."""
     metadata = describe_effective_thinking_mode(model_name=model_name, thinking_mode=thinking_mode)
     kwargs: dict[str, object] = {}
     if context_cache:
@@ -151,6 +155,7 @@ def _build_request_kwargs(
 
 
 def _empty_response_fallback(response) -> str:
+    """Return a fallback response when Anthropic returns no text."""
     response_id = getattr(response, "id", None)
     stop_reason = getattr(response, "stop_reason", None)
     details = []
@@ -167,6 +172,7 @@ def _empty_response_fallback(response) -> str:
 
 
 def _guess_mime_type(image_path: str) -> str:
+    """Guess an image MIME type from its file suffix."""
     suffix = Path(image_path).suffix.lower()
     if suffix == ".png":
         return "image/png"
@@ -176,6 +182,7 @@ def _guess_mime_type(image_path: str) -> str:
 
 
 def _extract_response_text(response) -> str | None:
+    """Extract text content from an Anthropic response."""
     content_items = getattr(response, "content", None) or []
     text_parts = []
     for item in content_items:
@@ -189,6 +196,7 @@ def _extract_response_text(response) -> str | None:
 
 
 def _extract_token_usage(response) -> object:
+    """Extract normalized token usage from an Anthropic response."""
     usage = getattr(response, "usage", None)
     if usage is None:
         return build_token_usage()

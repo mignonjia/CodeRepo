@@ -64,6 +64,7 @@ def compute_retry_delay_seconds(exc: Exception, retry_index: int) -> float:
 
 
 def _resolve_retry_window_seconds(configured_value: float | None) -> float | None:
+    """Resolve a retry delay window from the exception or defaults."""
     if configured_value is not None:
         return configured_value
 
@@ -82,6 +83,7 @@ def _resolve_retry_window_seconds(configured_value: float | None) -> float | Non
 
 
 def _extract_retry_delay_seconds(exc: Exception) -> float | None:
+    """Extract retry-after delay hints from provider exceptions."""
     response = getattr(exc, "response", None)
     headers = getattr(response, "headers", None)
     if headers:
@@ -103,6 +105,7 @@ def _extract_retry_delay_seconds(exc: Exception) -> float | None:
 
 
 def _coerce_delay_seconds(raw_value: object) -> float | None:
+    """Convert a retry delay hint into seconds."""
     try:
         parsed = float(str(raw_value).strip())
     except ValueError:
