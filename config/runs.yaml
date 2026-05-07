@@ -1,0 +1,10 @@
+# Minimal batch that runs without external model API keys. Replace model_name and
+# thinking_mode with a supported live model to run VLM evaluations.
+- model_name: random
+  thinking_mode: off
+  prompt_mode: structured_history
+  history_clips: 3
+  non_zero_reward_clips: 3
+  games: selected
+  seed_start: 0
+  num_runs: 1

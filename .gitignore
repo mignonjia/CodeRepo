@@ -1,0 +1,31 @@
+# Generated run artifacts
+runs/
+runs_local/
+logs/
+*.log
+
+# Local environment and editor files
+llm/api.sh
+.env
+.venv/
+.vscode/
+.DS_Store
+
+# Python/build artifacts
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Large generated media/checkpoints
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pkl
+*.pth
+*.pt
+*.safetensors
